@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AlphaBot — AI-Powered Stock Trading Simulator
 
-## Getting Started
+An educational paper trading platform powered by Claude AI, Next.js 14, Supabase, and real market data.
 
-First, run the development server:
+> DISCLAIMER: This platform is for educational and simulation purposes only. No real money is invested. All trades are paper trades.
+
+## Tech Stack
+
+- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- **Backend**: Next.js API Routes (serverless)
+- **Database**: Supabase (Postgres)
+- **AI**: Anthropic Claude API (claude-sonnet-4-20250514)
+- **Market Data**: Alpha Vantage API + yahoo-finance2 fallback
+- **Charts**: Recharts
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+cd AlphaBot
+npm install
+```
+
+### 2. Configure environment variables
+
+Copy `.env.local` and fill in your API keys:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+ALPHA_VANTAGE_API_KEY=your_alpha_vantage_api_key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Get your API keys:
+- **Supabase**: https://supabase.com (create a project, get keys from Settings > API)
+- **Anthropic**: https://console.anthropic.com
+- **Alpha Vantage**: https://www.alphavantage.co/support/#api-key (free tier: 5 req/min, 500/day)
+
+### 3. Set up Supabase database
+
+1. Create a new Supabase project
+2. Go to SQL Editor
+3. Run the contents of `schema.sql`
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Page | Route | Description |
+|------|-------|-------------|
+| Dashboard | `/` | Portfolio overview, P&L stats, holdings table, 30-day chart |
+| AlphaBot | `/bot` | AI agent control panel, 5-step pipeline, decision log |
+| Portfolio | `/portfolio` | Holdings pie chart, trade history, performance metrics |
+| Research | `/research` | Stock lookup, technical indicators, Claude analysis |
+| Settings | `/settings` | Watchlist, risk tolerance, API configuration |
 
-## Learn More
+## API Routes
 
-To learn more about Next.js, take a look at the following resources:
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/portfolio` | GET | Portfolio stats + positions |
+| `/api/bot/run` | POST | Run one full AlphaBot loop |
+| `/api/market/quotes` | GET | Live stock quotes |
+| `/api/market/history` | GET | OHLCV history |
+| `/api/research/[symbol]` | GET | Full technical + AI analysis |
+| `/api/trades/execute` | POST | Execute a paper trade |
+| `/api/trades/history` | GET | Trade history |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## AlphaBot Agent Pipeline
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Fetch live market data for watchlist stocks
+2. Compute technical indicators (RSI-14, MACD 12/26/9, SMA 20/50, Bollinger Bands, Volume ratio, 52W H/L)
+3. Send indicators + portfolio state to Claude API
+4. Validate trade against risk rules (max 20% position, max 15% drawdown)
+5. Execute paper trade in Supabase + take portfolio snapshot
 
-## Deploy on Vercel
+## Deploying to Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build  # verify build succeeds locally first
+vercel --prod
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Add all environment variables in Vercel project settings.
+
+Note: Alpha Vantage free tier (5 req/min) may cause bot runs to be slow for large watchlists. Consider upgrading or using yahoo-finance2 fallback exclusively.

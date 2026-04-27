@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<!--
+  PRODUCTION WARNING:
+  1. Replace hardcoded credentials with Supabase Auth / server-side session auth
+  2. Serve this file only over HTTPS
+  3. Add a server-side middleware check before serving this file
+  4. Replace localStorage with server-side persistence (Supabase)
+  5. Remove the noindex meta tag comment block and properly restrict access
+
+  DEFAULT LOGIN: admin / AlphaBot2024!
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  <title>AlphaBot Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --surface2: #161616;
+      --border: rgba(255,255,255,0.08);
+      --accent: #AAFF00;
+      --accent-dim: rgba(170,255,0,0.15);
+      --text: #ffffff;
+      --text-muted: rgba(255,255,255,0.4);
+      --red: #ff4d4d;
+      --red-dim: rgba(255,77,77,0.15);
+      --sidebar: 220px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* LOGIN */
+    #login-gate {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 60% 60% at 50% 0%, rgba(170,255,0,0.06) 0%, transparent 70%),
+        var(--bg);
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .login-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .login-logo span { color: var(--accent); }
+    .login-sub { color: var(--text-muted); font-size: 12px; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 28px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; color: var(--text-muted); font-size: 11px; font-family: monospace; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .field input {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: rgba(170,255,0,0.4); }
+    .btn-primary {
+      width: 100%;
+      padding: 11px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .login-error { color: var(--red); font-size: 12px; font-family: monospace; margin-top: 10px; display: none; }
+
+    /* PORTAL */
+    #portal { display: none; min-height: 100vh; }
+    .portal-layout { display: flex; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: var(--sidebar);
+      min-height: 100vh;
+      background: #0d0d0d;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+    .sidebar-logo {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo .brand { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; }
+    .sidebar-logo .brand span { color: var(--accent); }
+    .sidebar-logo .tag { font-family: monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 2px; margin-top: 2px; }
+    .sidebar-nav { padding: 12px 8px; flex: 1; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-item.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(170,255,0,0.2); }
+    .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+    .sidebar-footer { padding: 14px; border-top: 1px solid var(--border); }
+    .logout-btn {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-family: monospace;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 1px;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* MAIN CONTENT */
+    .main-content {
+      margin-left: var(--sidebar);
+      flex: 1;
+      padding: 28px;
+      min-height: 100vh;
+    }
+
+    /* SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* HEADER */
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+    .page-sub { color: var(--text-muted); font-family: monospace; font-size: 11px; margin-top: 4px; }
+
+    /* STAT CARDS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .stat-label { font-family: monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-value { font-family: monospace; font-size: 22px; font-weight: 700; color: var(--text); }
+    .stat-value.green { color: var(--accent); }
+    .stat-value.red { color: var(--red); }
+
+    /* CARD */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title { font-family: monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+    .card-body { padding: 18px; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { padding: 10px 14px; text-align: left; font-family: monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 400; }
+    td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .mono { font-family: monospace; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .badge-buy { background: var(--accent-dim); color: var(--accent); }
+    .badge-sell { background: var(--red-dim); color: var(--red); }
+    .badge-hold { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+    .pos { color: var(--accent); }
+    .neg { color: var(--red); }
+
+    /* FORMS */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-family: monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-textarea { min-height: 80px; resize: vertical; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(170,255,0,0.4); }
+    .form-select option { background: #111; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-accent { background: var(--accent); color: #000; }
+    .btn-accent:hover { opacity: 0.85; }
+    .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+    .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,77,0.3); }
+    .btn-danger:hover { background: rgba(255,77,77,0.25); }
+    .btn-sm { padding: 5px 10px; font-size: 10px; }
+
+    /* TOGGLE */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .toggle-label { font-size: 13px; }
+    .toggle-sub { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: left 0.2s;
+    }
+    .toggle.on::after { left: 21px; background: #000; }
+
+    /* WATCHLIST TAGS */
+    .ticker-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .ticker-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .ticker-remove {
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      border: none;
+      background: none;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .ticker-remove:hover { color: var(--red); }
+
+    /* QUICK ACTIONS */
+    .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .quick-action {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .quick-action:hover { border-color: rgba(170,255,0,0.3); background: rgba(170,255,0,0.04); }
+    .quick-action-icon { font-size: 18px; margin-bottom: 6px; }
+    .quick-action-label { font-size: 12px; font-weight: 600; }
+    .quick-action-sub { font-size: 10px; color: var(--text-muted); font-family: monospace; margin-top: 2px; }
+
+    /* EXPORT BTN */
+    .export-btn {
+      font-size: 10px;
+      padding: 5px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: monospace;
+      transition: all 0.15s;
+    }
+    .export-btn:hover { color: var(--accent); border-color: rgba(170,255,0,0.3); }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="login-gate">
+  <div class="login-card">
+    <div class="login-logo">Alpha<span>Bot</span></div>
+    <div class="login-sub">Admin Portal</div>
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" autocomplete="username" placeholder="admin" />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" onclick="AdminPortal.login()">Access Portal</button>
+    <div class="login-error" id="login-error">Invalid credentials. Try again.</div>
+  </div>
+</div>
+
+<!-- ADMIN PORTAL -->
+<div id="portal">
+  <div class="portal-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="brand">Alpha<span>Bot</span></div>
+        <div class="tag">Admin Console</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-section="overview" onclick="AdminPortal.navigate('overview')">
+          <span class="nav-icon">&#9635;</span> Overview
+        </div>
+        <div class="nav-item" data-section="portfolio" onclick="AdminPortal.navigate('portfolio')">
+          <span class="nav-icon">&#128181;</span> Portfolio
+        </div>
+        <div class="nav-item" data-section="trades" onclick="AdminPortal.navigate('trades')">
+          <span class="nav-icon">&#9654;</span> Trade Log
+        </div>
+        <div class="nav-item" data-section="watchlist" onclick="AdminPortal.navigate('watchlist')">
+          <span class="nav-icon">&#128202;</span> Watchlist
+        </div>
+        <div class="nav-item" data-section="bot-config" onclick="AdminPortal.navigate('bot-config')">
+          <span class="nav-icon">&#9881;</span> Bot Config
+        </div>
+        <div class="nav-item" data-section="announcements" onclick="AdminPortal.navigate('announcements')">
+          <span class="nav-icon">&#128227;</span> Announcements
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="AdminPortal.logout()">LOG OUT</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- OVERVIEW -->
+      <section class="section active" id="section-overview">
+        <div class="page-header">
+          <div class="page-title">Overview</div>
+          <div class="page-sub">AlphaBot admin dashboard — real-time simulation status</div>
+        </div>
+
+        <div class="stats-grid" id="overview-stats">
+          <div class="stat-card">
+            <div class="stat-label">Portfolio Value</div>
+            <div class="stat-value green" id="stat-total-value">$100,000</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value" id="stat-trades">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Open Positions</div>
+            <div class="stat-value" id="stat-positions">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Watchlist Symbols</div>
+            <div class="stat-value" id="stat-watchlist">20</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Quick Actions</div>
+          </div>
+          <div class="card-body">
+            <div class="quick-actions">
+              <div class="quick-action" onclick="AdminPortal.navigate('trades')">
+                <div class="quick-action-icon">&#9654;</div>
+                <div class="quick-action-label">View Trade Log</div>
+                <div class="quick-action-sub">All bot decisions</div>
+              </div>
+              <div class="quick-action" onclick="AdminPortal.navigate('watchlist')">
+                <div class="quick-action-icon">&#10010;</div>
+                <div class="quick-action-label">Edit Watchlist</div>
+                <div class="quick-action-sub">Add or remove tickers</div>
+              </div>
+              <div class="quick-action" onclick="AdminPortal.navigate('bot-config')">
+                <div class="quick-action-icon">&#9881;</div>
+                <div class="quick-action-label">Configure Bot</div>
+                <div class="quick-action-sub">Risk and schedule settings</div>
+              </div>
+              <div class="quick-action" onclick="AdminPortal.navigate('announcements')">
+                <div class="quick-action-icon">&#128227;</div>
+                <div class="quick-action-label">Post Announcement</div>
+                <div class="quick-action-sub">Show banner on main site</div>
+              </div>
+              <div class="quick-action" onclick="AdminPortal.exportAll()">
+                <div class="quick-action-icon">&#128229;</div>
+                <div class="quick-action-label">Export All Data</div>
+                <div class="quick-action-sub">Download full JSON backup</div>
+              </div>
+              <div class="quick-action" onclick="AdminPortal.resetPortfolio()">
+                <div class="quick-action-icon">&#8635;</div>
+                <div class="quick-action-label">Reset Simulation</div>
+                <div class="quick-action-sub">Clear all trades & reset $100k</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Activity</div>
+          </div>
+          <div class="card-body">
+            <div id="recent-activity" style="color: var(--text-muted); font-family: monospace; font-size: 12px;">
+              No recent activity logged.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PORTFOLIO -->
+      <section class="section" id="section-portfolio">
+        <div class="page-header">
+          <div class="page-title">Portfolio</div>
+          <div class="page-sub">Current holdings and cash balance</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Holdings</div>
+            <button class="export-btn" onclick="AdminPortal.exportSection('portfolio')">Export JSON</button>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Symbol</th><th>Shares</th><th>Avg Cost</th><th>Value (est)</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="portfolio-table-body">
+                <tr><td colspan="5" style="color: var(--text-muted); font-family: monospace; font-size: 12px; text-align:center; padding: 24px">Connect Supabase to load live portfolio data.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Manual Trade</div>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Symbol</label>
+                <input type="text" class="form-input" id="manual-symbol" placeholder="AAPL" style="text-transform:uppercase" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Action</label>
+                <select class="form-select" id="manual-action">
+                  <option value="BUY">BUY</option>
+                  <option value="SELL">SELL</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Shares</label>
+                <input type="number" class="form-input" id="manual-shares" placeholder="10" min="0.0001" step="0.0001" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Price ($)</label>
+                <input type="number" class="form-input" id="manual-price" placeholder="150.00" min="0.01" step="0.01" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reason</label>
+              <textarea class="form-textarea" id="manual-reason" placeholder="Manual override reason..."></textarea>
+            </div>
+            <button class="btn btn-accent" onclick="AdminPortal.submitManualTrade()">Execute Manual Trade</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRADE LOG -->
+      <section class="section" id="section-trades">
+        <div class="page-header">
+          <div class="page-title">Trade Log</div>
+          <div class="page-sub">All bot and manual trading activity</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All Trades</div>
+            <button class="export-btn" onclick="AdminPortal.exportSection('trades')">Export JSON</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr><th>Time</th><th>Symbol</th><th>Action</th><th>Shares</th><th>Price</th><th>Total</th><th>Confidence</th><th>Reasoning</th></tr>
+              </thead>
+              <tbody id="trades-table-body">
+                <tr><td colspan="8" style="color: var(--text-muted); font-family: monospace; font-size: 12px; text-align:center; padding: 24px">No trades loaded. Connect Supabase API.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- WATCHLIST -->
+      <section class="section" id="section-watchlist">
+        <div class="page-header">
+          <div class="page-title">Watchlist Manager</div>
+          <div class="page-sub">Control which tickers AlphaBot analyzes</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Active Tickers</div>
+            <button class="export-btn" onclick="AdminPortal.exportSection('watchlist')">Export JSON</button>
+          </div>
+          <div class="card-body">
+            <div style="display:flex; gap:10px; margin-bottom:14px">
+              <input type="text" class="form-input" id="new-ticker" placeholder="Add ticker (e.g. MSFT)" style="max-width:240px; text-transform:uppercase" onkeydown="if(event.key==='Enter') AdminPortal.addTicker()" />
+              <button class="btn btn-accent" onclick="AdminPortal.addTicker()">Add</button>
+            </div>
+            <div class="ticker-tags" id="ticker-tags"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Default Watchlist (20 symbols)</div></div>
+          <div class="card-body">
+            <p style="color: var(--text-muted); font-size: 12px; font-family: monospace; line-height: 1.8;">
+              AAPL, MSFT, GOOGL, AMZN, NVDA, META, TSLA, AMD, JPM, BAC, SPY, QQQ, PLTR, SOFI, RIVN, CRWD, PYPL, ROKU, NFLX, DIS
+            </p>
+            <button class="btn btn-ghost" style="margin-top:12px" onclick="AdminPortal.resetWatchlist()">Restore Defaults</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOT CONFIG -->
+      <section class="section" id="section-bot-config">
+        <div class="page-header">
+          <div class="page-title">Bot Configuration</div>
+          <div class="page-sub">AlphaBot trading parameters and risk rules</div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Risk Parameters</div>
+            <button class="export-btn" onclick="AdminPortal.exportSection('bot-config')">Export JSON</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Max Position Size (%)</label>
+                <input type="number" class="form-input" id="cfg-max-position" value="20" min="1" max="100" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Max Drawdown (%)</label>
+                <input type="number" class="form-input" id="cfg-max-drawdown" value="15" min="1" max="50" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Starting Balance ($)</label>
+                <input type="number" class="form-input" id="cfg-start-balance" value="100000" min="1000" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Risk Tolerance</label>
+                <select class="form-select" id="cfg-risk-tolerance">
+                  <option value="conservative">Conservative</option>
+                  <option value="moderate" selected>Moderate</option>
+                  <option value="aggressive">Aggressive</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">AI Model</label>
+                <select class="form-select" id="cfg-model">
+                  <option value="claude-sonnet-4-20250514" selected>claude-sonnet-4-20250514</option>
+                  <option value="claude-opus-4-5">claude-opus-4-5</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Stocks per Bot Run</label>
+                <input type="number" class="form-input" id="cfg-stocks-per-run" value="5" min="1" max="20" />
+              </div>
+            </div>
+            <div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Alpha Vantage Data Source</div>
+                  <div class="toggle-sub">Use Alpha Vantage as primary (falls back to Yahoo Finance)</div>
+                </div>
+                <div class="toggle on" id="toggle-av" onclick="AdminPortal.toggleSwitch('toggle-av', 'useAlphaVantage')"></div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Paper Trading Mode</div>
+                  <div class="toggle-sub">Always ON — no real money involved</div>
+                </div>
+                <div class="toggle on" style="opacity: 0.5; cursor: not-allowed;"></div>
+              </div>
+            </div>
+            <button class="btn btn-accent" style="margin-top:16px" onclick="AdminPortal.saveBotConfig()">Save Configuration</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANNOUNCEMENTS -->
+      <section class="section" id="section-announcements">
+        <div class="page-header">
+          <div class="page-title">Announcements</div>
+          <div class="page-sub">Display banners and messages on the main AlphaBot site</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Active Announcement</div></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Announcement Text</label>
+              <textarea class="form-textarea" id="announcement-text" placeholder="Enter announcement to display on the site..."></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="announcement-type">
+                  <option value="info">Info (Blue)</option>
+                  <option value="warning">Warning (Yellow)</option>
+                  <option value="success">Success (Green)</option>
+                  <option value="error">Alert (Red)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Visible on Site</label>
+                <div style="display:flex; align-items:center; gap:10px; margin-top:6px">
+                  <div class="toggle" id="toggle-announcement" onclick="AdminPortal.toggleSwitch('toggle-announcement', 'announcementActive')"></div>
+                  <span id="ann-status-label" style="font-family:monospace; font-size:11px; color: var(--text-muted)">OFF</span>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-accent" onclick="AdminPortal.saveAnnouncement()">Publish Announcement</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Announcement History</div>
+            <button class="export-btn" onclick="AdminPortal.exportSection('announcements')">Export JSON</button>
+          </div>
+          <div class="card-body">
+            <div id="announcement-history" style="color: var(--text-muted); font-family:monospace; font-size:12px;">No announcements yet.</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/*
+ * PRODUCTION WARNING:
+ * - Replace credentials with real server-side auth (Supabase Auth)
+ * - Replace localStorage with Supabase database calls
+ * - Serve over HTTPS only
+ * - Add CSRF protection
+ *
+ * localStorage keys used (read by main site):
+ *   alphabot_watchlist       -> JSON array of ticker strings
+ *   alphabot_bot_config      -> JSON object with bot configuration
+ *   alphabot_announcement    -> JSON { text, type, active }
+ *
+ * Main site reads these keys on load to override defaults.
+ */
+
+// TODO: Replace with real server-side auth before going live
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'AlphaBot2024!'
+};
+
+const DEFAULT_WATCHLIST = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA','AMD','JPM','BAC','SPY','QQQ','PLTR','SOFI','RIVN','CRWD','PYPL','ROKU','NFLX','DIS'];
+
+const AdminPortal = (() => {
+  'use strict';
+
+  // State
+  let state = {
+    watchlist: [],
+    botConfig: {},
+    announcement: {},
+    toggles: {},
+    recentActivity: [],
+  };
+
+  function init() {
+    loadState();
+    renderWatchlist();
+    renderBotConfig();
+    renderAnnouncement();
+    updateOverviewStats();
+  }
+
+  function loadState() {
+    try {
+      state.watchlist = JSON.parse(localStorage.getItem('alphabot_watchlist') || 'null') || [...DEFAULT_WATCHLIST];
+      state.botConfig = JSON.parse(localStorage.getItem('alphabot_bot_config') || '{}');
+      state.announcement = JSON.parse(localStorage.getItem('alphabot_announcement') || '{}');
+      state.recentActivity = JSON.parse(localStorage.getItem('alphabot_activity') || '[]');
+      state.toggles = JSON.parse(localStorage.getItem('alphabot_toggles') || '{"useAlphaVantage":true,"announcementActive":false}');
+    } catch {
+      state.watchlist = [...DEFAULT_WATCHLIST];
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem('alphabot_watchlist', JSON.stringify(state.watchlist));
+    localStorage.setItem('alphabot_bot_config', JSON.stringify(state.botConfig));
+    localStorage.setItem('alphabot_announcement', JSON.stringify(state.announcement));
+    localStorage.setItem('alphabot_activity', JSON.stringify(state.recentActivity.slice(0, 50)));
+    localStorage.setItem('alphabot_toggles', JSON.stringify(state.toggles));
+  }
+
+  function logActivity(msg) {
+    state.recentActivity.unshift({ msg, time: new Date().toLocaleTimeString() });
+    renderRecentActivity();
+    saveState();
+  }
+
+  function renderRecentActivity() {
+    const el = document.getElementById('recent-activity');
+    if (!el) return;
+    if (state.recentActivity.length === 0) {
+      el.textContent = 'No recent activity.';
+      return;
+    }
+    el.innerHTML = state.recentActivity.slice(0, 8).map(a =>
+      `<div style="padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04)">
+        <span style="color: var(--accent)">${escText(a.time)}</span>
+        <span style="color: rgba(255,255,255,0.5); margin-left:10px">${escText(a.msg)}</span>
+      </div>`
+    ).join('');
+  }
+
+  function escText(s) {
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+  }
+
+  function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errEl = document.getElementById('login-error');
+
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      document.getElementById('login-gate').style.display = 'none';
+      document.getElementById('portal').style.display = 'block';
+      init();
+    } else {
+      errEl.style.display = 'block';
+      setTimeout(() => { errEl.style.display = 'none'; }, 3000);
+    }
+  }
+
+  function logout() {
+    if (confirm('Log out of AlphaBot admin?')) {
+      document.getElementById('portal').style.display = 'none';
+      document.getElementById('login-gate').style.display = 'flex';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+  }
+
+  function navigate(section) {
+    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const sectionEl = document.getElementById('section-' + section);
+    if (sectionEl) sectionEl.classList.add('active');
+    document.querySelector('[data-section="' + section + '"]')?.classList.add('active');
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function updateOverviewStats() {
+    const statWatchlist = document.getElementById('stat-watchlist');
+    if (statWatchlist) statWatchlist.textContent = state.watchlist.length;
+    renderRecentActivity();
+  }
+
+  // WATCHLIST
+  function renderWatchlist() {
+    const el = document.getElementById('ticker-tags');
+    if (!el) return;
+    el.innerHTML = state.watchlist.map(t =>
+      `<div class="ticker-tag">
+        <span>${escText(t)}</span>
+        <button class="ticker-remove" onclick="AdminPortal.removeTicker('${escText(t)}')" aria-label="Remove ${escText(t)}">&times;</button>
+      </div>`
+    ).join('');
+    updateOverviewStats();
+  }
+
+  function addTicker() {
+    const input = document.getElementById('new-ticker');
+    const val = input.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
+    if (!val) return;
+    if (state.watchlist.includes(val)) { toast(val + ' already in watchlist'); return; }
+    state.watchlist.push(val);
+    saveState();
+    renderWatchlist();
+    input.value = '';
+    logActivity('Added ' + val + ' to watchlist');
+    toast('Added ' + val);
+  }
+
+  function removeTicker(t) {
+    if (!confirm('Remove ' + t + ' from watchlist?')) return;
+    state.watchlist = state.watchlist.filter(x => x !== t);
+    saveState();
+    renderWatchlist();
+    logActivity('Removed ' + t + ' from watchlist');
+    toast('Removed ' + t);
+  }
+
+  function resetWatchlist() {
+    if (!confirm('Reset watchlist to 20 default symbols?')) return;
+    state.watchlist = [...DEFAULT_WATCHLIST];
+    saveState();
+    renderWatchlist();
+    logActivity('Watchlist reset to defaults');
+    toast('Watchlist reset');
+  }
+
+  // BOT CONFIG
+  function renderBotConfig() {
+    const cfg = state.botConfig;
+    if (cfg.maxPosition) document.getElementById('cfg-max-position').value = cfg.maxPosition;
+    if (cfg.maxDrawdown) document.getElementById('cfg-max-drawdown').value = cfg.maxDrawdown;
+    if (cfg.startBalance) document.getElementById('cfg-start-balance').value = cfg.startBalance;
+    if (cfg.riskTolerance) document.getElementById('cfg-risk-tolerance').value = cfg.riskTolerance;
+    if (cfg.model) document.getElementById('cfg-model').value = cfg.model;
+    if (cfg.stocksPerRun) document.getElementById('cfg-stocks-per-run').value = cfg.stocksPerRun;
+
+    // Toggles
+    const avToggle = document.getElementById('toggle-av');
+    if (state.toggles.useAlphaVantage && avToggle) avToggle.classList.add('on');
+  }
+
+  function saveBotConfig() {
+    const cfg = {
+      maxPosition: parseFloat(document.getElementById('cfg-max-position').value) || 20,
+      maxDrawdown: parseFloat(document.getElementById('cfg-max-drawdown').value) || 15,
+      startBalance: parseFloat(document.getElementById('cfg-start-balance').value) || 100000,
+      riskTolerance: document.getElementById('cfg-risk-tolerance').value,
+      model: document.getElementById('cfg-model').value,
+      stocksPerRun: parseInt(document.getElementById('cfg-stocks-per-run').value) || 5,
+      updatedAt: new Date().toISOString(),
+    };
+    state.botConfig = cfg;
+    saveState();
+    logActivity('Bot config updated — risk: ' + cfg.riskTolerance + ', max pos: ' + cfg.maxPosition + '%');
+    toast('Config saved');
+  }
+
+  // ANNOUNCEMENT
+  function renderAnnouncement() {
+    const ann = state.announcement;
+    if (ann.text) document.getElementById('announcement-text').value = ann.text;
+    if (ann.type) document.getElementById('announcement-type').value = ann.type;
+    const toggle = document.getElementById('toggle-announcement');
+    const label = document.getElementById('ann-status-label');
+    if (state.toggles.announcementActive) {
+      toggle.classList.add('on');
+      label.textContent = 'ON';
+    } else {
+      toggle.classList.remove('on');
+      label.textContent = 'OFF';
+    }
+    renderAnnouncementHistory();
+  }
+
+  function saveAnnouncement() {
+    const text = document.getElementById('announcement-text').value.trim();
+    const type = document.getElementById('announcement-type').value;
+
+    if (!text) { toast('Please enter announcement text'); return; }
+
+    state.announcement = {
+      text,
+      type,
+      active: state.toggles.announcementActive,
+      savedAt: new Date().toISOString(),
+    };
+
+    // Store history
+    let history = JSON.parse(localStorage.getItem('alphabot_ann_history') || '[]');
+    history.unshift({ text, type, savedAt: new Date().toLocaleString() });
+    localStorage.setItem('alphabot_ann_history', JSON.stringify(history.slice(0, 20)));
+
+    saveState();
+    renderAnnouncementHistory();
+    logActivity('Announcement published: ' + text.slice(0, 40) + '...');
+    toast('Announcement saved');
+  }
+
+  function renderAnnouncementHistory() {
+    const el = document.getElementById('announcement-history');
+    if (!el) return;
+    const history = JSON.parse(localStorage.getItem('alphabot_ann_history') || '[]');
+    if (history.length === 0) { el.textContent = 'No announcements yet.'; return; }
+    el.innerHTML = history.slice(0, 5).map(a =>
+      `<div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04)">
+        <span style="font-size:10px; color: var(--accent)">[${escText(a.type.toUpperCase())}]</span>
+        <span style="margin-left:8px">${escText(a.text)}</span>
+        <div style="color: var(--text-muted); font-size:10px; margin-top:2px">${escText(a.savedAt)}</div>
+      </div>`
+    ).join('');
+  }
+
+  // TOGGLE
+  function toggleSwitch(id, key) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const newVal = !state.toggles[key];
+    state.toggles[key] = newVal;
+    el.classList.toggle('on', newVal);
+
+    if (id === 'toggle-announcement') {
+      const label = document.getElementById('ann-status-label');
+      if (label) label.textContent = newVal ? 'ON' : 'OFF';
+      if (state.announcement.text) {
+        state.announcement.active = newVal;
+      }
+    }
+
+    saveState();
+    toast(key + ' ' + (newVal ? 'enabled' : 'disabled'));
+  }
+
+  // MANUAL TRADE
+  function submitManualTrade() {
+    const symbol = document.getElementById('manual-symbol').value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
+    const action = document.getElementById('manual-action').value;
+    const shares = parseFloat(document.getElementById('manual-shares').value);
+    const price = parseFloat(document.getElementById('manual-price').value);
+    const reason = document.getElementById('manual-reason').value.trim();
+
+    if (!symbol || !shares || !price || shares <= 0 || price <= 0) {
+      toast('Please fill in all trade fields correctly');
+      return;
+    }
+
+    if (!/^[A-Z]{1,6}$/.test(symbol)) {
+      toast('Invalid symbol format');
+      return;
+    }
+
+    const trade = { symbol, action, shares, price, reason, timestamp: new Date().toISOString(), source: 'manual-admin' };
+    let trades = JSON.parse(localStorage.getItem('alphabot_manual_trades') || '[]');
+    trades.unshift(trade);
+    localStorage.setItem('alphabot_manual_trades', JSON.stringify(trades.slice(0, 100)));
+
+    logActivity('Manual trade: ' + action + ' ' + shares + ' ' + symbol + ' @ $' + price);
+    toast('Manual trade logged: ' + action + ' ' + symbol);
+
+    // Clear form
+    ['manual-symbol','manual-shares','manual-price','manual-reason'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+  }
+
+  // RESET PORTFOLIO
+  function resetPortfolio() {
+    if (!confirm('This will clear all trade history and reset the portfolio to $100,000. Are you sure?')) return;
+    localStorage.removeItem('alphabot_manual_trades');
+    localStorage.removeItem('alphabot_activity');
+    state.recentActivity = [];
+    saveState();
+    logActivity('Portfolio simulation reset to $100,000');
+    toast('Portfolio reset. Reconnect Supabase to clear DB.');
+  }
+
+  // EXPORT
+  function exportSection(section) {
+    let data;
+    switch (section) {
+      case 'portfolio': data = { positions: JSON.parse(localStorage.getItem('alphabot_manual_trades') || '[]') }; break;
+      case 'trades': data = { trades: JSON.parse(localStorage.getItem('alphabot_manual_trades') || '[]') }; break;
+      case 'watchlist': data = { watchlist: state.watchlist }; break;
+      case 'bot-config': data = state.botConfig; break;
+      case 'announcements': data = { history: JSON.parse(localStorage.getItem('alphabot_ann_history') || '[]') }; break;
+      default: data = {};
+    }
+    downloadJSON(data, 'alphabot-' + section + '-' + Date.now() + '.json');
+    toast('Exported ' + section);
+  }
+
+  function exportAll() {
+    const data = {
+      watchlist: state.watchlist,
+      botConfig: state.botConfig,
+      announcement: state.announcement,
+      manualTrades: JSON.parse(localStorage.getItem('alphabot_manual_trades') || '[]'),
+      recentActivity: state.recentActivity,
+      exportedAt: new Date().toISOString(),
+    };
+    downloadJSON(data, 'alphabot-full-backup-' + Date.now() + '.json');
+    toast('Full export downloaded');
+  }
+
+  function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Allow pressing Enter to login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-gate').style.display !== 'none') {
+      login();
+    }
+  });
+
+  return {
+    login,
+    logout,
+    navigate,
+    addTicker,
+    removeTicker,
+    resetWatchlist,
+    saveBotConfig,
+    saveAnnouncement,
+    toggleSwitch,
+    submitManualTrade,
+    resetPortfolio,
+    exportSection,
+    exportAll,
+  };
+})();
+</script>
+</body>
+</html>
