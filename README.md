@@ -1,5 +1,7 @@
 # AlphaBot — AI-Powered Stock Trading Simulator
 
+**Live Demo: [https://alphabot-lime.vercel.app](https://alphabot-lime.vercel.app)**
+
 An educational paper trading platform powered by Claude AI, Next.js 14, Supabase, and real market data.
 
 > DISCLAIMER: This platform is for educational and simulation purposes only. No real money is invested. All trades are paper trades.
