@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
       history = generateMockHistory(symbol, clampedDays);
     }
 
-    return NextResponse.json({ symbol, history });
+    return NextResponse.json(
+      { symbol, history },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' } }
+    );
   } catch (error) {
     console.error('History API error:', error);
     return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });
