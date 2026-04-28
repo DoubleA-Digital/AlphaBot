@@ -4,8 +4,8 @@ import { getQuote } from '@/lib/market';
 import type { Position, PortfolioStats } from '@/types';
 
 const MOCK_STATS = {
-  totalValue: 100000,
-  cashBalance: 100000,
+  totalValue: 4000,
+  cashBalance: 4000,
   positionsValue: 0,
   totalPnl: 0,
   totalPnlPct: 0,
@@ -34,7 +34,7 @@ export async function GET() {
     if (!portfolios || portfolios.length === 0) {
       const { data: newPortfolio } = await supabase
         .from('portfolios')
-        .insert({ cash_balance: 100000 })
+        .insert({ cash_balance: 4000 })
         .select()
         .single();
       portfolios = newPortfolio ? [newPortfolio] : [];
@@ -92,7 +92,7 @@ export async function GET() {
     const todayPnlPct = yesterday ? (todayPnl / yesterday) * 100 : 0;
 
     // All-time P&L (starting value 100k)
-    const startValue = 100000;
+    const startValue = 4000;
     const totalPnl = totalValue - startValue;
     const totalPnlPct = (totalPnl / startValue) * 100;
 

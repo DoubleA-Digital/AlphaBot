@@ -128,6 +128,34 @@ export interface PortfolioStats {
   snapshots: PortfolioSnapshot[];
 }
 
+export interface ClaudeRecommendation {
+  action: 'BUY' | 'SELL' | 'HOLD';
+  symbol: string;
+  shares: number;
+  buy_at_price: number;
+  sell_target_price: number;
+  stop_loss_price: number;
+  confidence: number;
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
+  reasoning: string;
+  key_signals: string[];
+  expected_timeframe: string;
+  estimated_profit: string;
+  estimated_loss: string;
+}
+
+export interface BotRunResult {
+  success: boolean;
+  marketSummary: string;
+  recommendations: ClaudeRecommendation[];
+  doNotTouch: string[];
+  doNotTouchReasons: string[];
+  portfolioHealthScore: number;
+  monthlyReturnProjection: string;
+  portfolioState: { cash: number; positions: unknown[]; totalValue: number };
+  mode: 'live' | 'demo';
+}
+
 export interface ResearchData {
   symbol: string;
   quote: StockQuote;

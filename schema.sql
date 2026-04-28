@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS portfolios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id),
-  cash_balance DECIMAL(15,2) DEFAULT 100000.00,
+  cash_balance DECIMAL(15,2) DEFAULT 4000.00,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -61,5 +61,5 @@ CREATE TABLE IF NOT EXISTS portfolio_snapshots (
 -- ALTER TABLE portfolio_snapshots ENABLE ROW LEVEL SECURITY;
 
 -- Insert a demo portfolio (for testing without auth)
-INSERT INTO portfolios (cash_balance) VALUES (100000.00)
+INSERT INTO portfolios (cash_balance) VALUES (4000.00)
 ON CONFLICT DO NOTHING;

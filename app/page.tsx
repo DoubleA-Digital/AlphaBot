@@ -8,6 +8,94 @@ import { TrendingUp, TrendingDown, RefreshCw, Activity, Zap, BarChart2 } from 'l
 import { clsx } from 'clsx';
 import type { PortfolioStats, Position } from '@/types';
 
+const CHALLENGE_KEY = 'alphabot_challenge_start';
+const CHALLENGE_DAYS = 30;
+
+function formatDate(d: Date) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function ChallengeSection({ stats }: { stats: PortfolioStats | null }) {
+  const [startDate, setStartDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(CHALLENGE_KEY);
+    if (stored) {
+      setStartDate(new Date(stored));
+    } else {
+      const now = new Date();
+      localStorage.setItem(CHALLENGE_KEY, now.toISOString());
+      setStartDate(now);
+    }
+  }, []);
+
+  if (!startDate) return null;
+
+  const now = new Date();
+  const msElapsed = now.getTime() - startDate.getTime();
+  const dayElapsed = Math.max(1, Math.min(CHALLENGE_DAYS, Math.floor(msElapsed / (1000 * 60 * 60 * 24)) + 1));
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + CHALLENGE_DAYS);
+
+  const startValue = 4000;
+  const currentValue = stats?.totalValue ?? startValue;
+  const pnl = currentValue - startValue;
+  const pnlPct = (pnl / startValue) * 100;
+
+  const fmt = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+  const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+
+  const snapshotData = stats?.snapshots ?? [];
+
+  return (
+    <div className="bg-[#111] border border-white/10 rounded-lg p-5 border-l-4 border-l-[#AAFF00]">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h2 className="text-white font-bold text-lg" style={{ fontFamily: 'var(--font-syne)' }}>30-DAY CHALLENGE</h2>
+          <p className="text-white/30 text-xs font-mono mt-0.5">
+            Started: {formatDate(startDate)} &nbsp;&middot;&nbsp; Ends: {formatDate(endDate)}
+          </p>
+        </div>
+        <span className="px-3 py-1 bg-[#AAFF00] text-black text-xs font-mono font-bold rounded-full">
+          Day {dayElapsed} of {CHALLENGE_DAYS}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="bg-black/40 border border-white/5 rounded p-3">
+          <div className="text-white/30 text-[10px] font-mono uppercase mb-1">Starting</div>
+          <div className="font-mono font-bold text-white">{fmt(startValue)}</div>
+        </div>
+        <div className="bg-black/40 border border-white/5 rounded p-3">
+          <div className="text-white/30 text-[10px] font-mono uppercase mb-1">P&amp;L</div>
+          <div className={clsx('font-mono font-bold', pnl >= 0 ? 'text-[#AAFF00]' : 'text-red-400')}>{fmt(pnl)}</div>
+        </div>
+        <div className="bg-black/40 border border-white/5 rounded p-3">
+          <div className="text-white/30 text-[10px] font-mono uppercase mb-1">Return</div>
+          <div className={clsx('font-mono font-bold', pnlPct >= 0 ? 'text-[#AAFF00]' : 'text-red-400')}>{fmtPct(pnlPct)}</div>
+        </div>
+        <div className="bg-black/40 border border-white/5 rounded p-3">
+          <div className="text-white/30 text-[10px] font-mono uppercase mb-1">Win/Loss</div>
+          <div className="font-mono font-bold text-white">0W / 0L</div>
+        </div>
+      </div>
+
+      {snapshotData.length > 1 ? (
+        <PortfolioChart snapshots={snapshotData} startValue={startValue} />
+      ) : (
+        <div className="h-24 flex items-center justify-center border border-white/5 rounded bg-black/20">
+          <span className="text-white/20 text-xs font-mono">Portfolio chart will appear after first bot run</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-6 mt-3 text-xs font-mono text-white/30">
+        <span>Bot Accuracy: <span className="text-white/50">—%</span></span>
+        <span>Trades: <span className="text-white/50">0</span></span>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<PortfolioStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +163,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Total Value"
-          value={stats ? fmt(stats.totalValue) : '$100,000.00'}
+          value={stats ? fmt(stats.totalValue) : '$4,000.00'}
           sub={stats ? `Cash: ${fmt(stats.cashBalance)}` : 'Starting balance'}
           accent
           loading={loading}
@@ -103,6 +191,9 @@ export default function Dashboard() {
           loading={loading}
         />
       </div>
+
+      {/* 30-Day Challenge */}
+      <ChallengeSection stats={stats} />
 
       {/* Tab Switch */}
       <div className="flex items-center gap-1 border-b border-white/10 pb-0">
@@ -140,7 +231,7 @@ export default function Dashboard() {
             {loading ? (
               <div className="h-56 bg-white/5 rounded animate-pulse" />
             ) : stats && stats.snapshots.length > 1 ? (
-              <PortfolioChart snapshots={stats.snapshots} startValue={100000} />
+              <PortfolioChart snapshots={stats.snapshots} startValue={4000} />
             ) : (
               <div className="h-56 flex flex-col items-center justify-center gap-3 text-white/20 text-sm font-mono">
                 <Zap size={24} className="text-[#AAFF00]/30" />
