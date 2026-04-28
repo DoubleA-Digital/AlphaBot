@@ -135,15 +135,12 @@ export default function BotPage() {
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm font-mono flex items-center gap-2">
-          <AlertCircle size={14} />
-          {error}
-          {error.toLowerCase().includes('api') && (
-            <span className="text-red-400/60 text-xs ml-1">— Add your API keys in Settings to enable full functionality</span>
-          )}
-        </div>
-      )}
+      {/* Demo mode info banner (replaces red error) */}
+      <div className="bg-[#AAFF00]/5 border border-[#AAFF00]/15 rounded-lg px-4 py-2 text-[#AAFF00]/60 text-xs font-mono flex items-center gap-2">
+        <Zap size={11} className="text-[#AAFF00]/50" />
+        Demo Mode — paper trades run in memory. Connect Supabase in Settings to persist trades across sessions.
+        {error && <span className="ml-auto text-red-400/60">{error}</span>}
+      </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3">
