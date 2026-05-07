@@ -233,18 +233,28 @@ async function getPortfolioFromSupabase() {
   return { cash: portfolio.cash_balance as number, positions: (positions ?? []) as Array<{ symbol: string; shares: number; avg_cost_basis: number }> };
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const researchResults = await Promise.all(WATCHLIST.map(sym => researchStock(sym)));
 
     let cash: number;
     let positions: typeof memPositions;
 
-    if (hasSupabase) {
-      const state = await getPortfolioFromSupabase();
-      cash = state.cash;
-      positions = state.positions;
-    } else {
+    // Prefer real portfolio state sent from the client (localStorage)
+    try {
+      const body = await req.json().catch(() => ({}));
+      if (typeof body.currentCash === 'number' && Array.isArray(body.currentPositions)) {
+        cash = body.currentCash;
+        positions = body.currentPositions;
+      } else if (hasSupabase) {
+        const state = await getPortfolioFromSupabase();
+        cash = state.cash;
+        positions = state.positions;
+      } else {
+        cash = memPortfolioState.cash;
+        positions = memPositions;
+      }
+    } catch {
       cash = memPortfolioState.cash;
       positions = memPositions;
     }
